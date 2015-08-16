@@ -31,15 +31,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.*;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.ResourceBundle;
-import java.util.Set;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its external
@@ -153,7 +146,7 @@ public class JSONObject {
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        this.map = new HashMap<String, Object>();
+        this.map = new TreeMap<String, Object>();
     }
 
     /**
@@ -389,15 +382,29 @@ public class JSONObject {
      */
     public JSONObject accumulate(String key, Object value) throws JSONException {
         testValidity(value);
-        Object object = this.opt(key);
+
+        Object object = this.opt(key+"s");
+
+        if( object == null )
+            object = this.opt(key);
+
         if (object == null) {
-            this.put(key,
-                    value instanceof JSONArray ? new JSONArray().put(value)
-                            : value);
+
+            if( value instanceof JSONArray)
+                this.put( key, new JSONArray().put(value) );
+            else {
+                this.put(key, value);
+            }
+
         } else if (object instanceof JSONArray) {
             ((JSONArray) object).put(value);
         } else {
-            this.put(key, new JSONArray().put(object).put(value));
+            //pluralize
+            boolean endsWithS = key.endsWith("s");
+            if( !endsWithS )
+                this.remove(key);
+
+            this.put( endsWithS ? key : key + "s", new JSONArray().put(object).put(value));
         }
         return this;
     }
